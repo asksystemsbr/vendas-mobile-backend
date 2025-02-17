@@ -176,7 +176,8 @@ namespace ControlStoreAPI.Services
                         ValorVenda = produto?.ValorVenda,
                         EstoqueMin = detalhe.EstoqueMinimo,
                         EstoqueMax = detalhe.EstoqueMaximo,
-                        QuantidadeEstoque = detalhe.Quantidade
+                        QuantidadeEstoque = detalhe.Quantidade,
+                        TotalizadorParcial = produto?.TotalizadorParcial
                     };
                 }).ToList();
             }

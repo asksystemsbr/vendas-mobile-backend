@@ -13,12 +13,12 @@ namespace ControlStoreAPI.Services.Interface
         Task RemoveContex(PedidoDetalhe item);
         Task Detached(PedidoDetalhe item);
         Task<int> GetLasdOrOne();
-        Task ClearDetail(List<Produto> items
-            , PedidoCabecalho itemCabecalho);
-        Task ClearDetailDeep(List<Produto> items
-    , PedidoCabecalho itemCabecalho);
-        Task SaveDetail(List<Produto> items
-    , PedidoCabecalho itemCabecalho);
+        Task ClearDetail(List<Produto> items, PedidoCabecalho itemCabecalho);
+        Task ClearDetailDeep(List<Produto> items, PedidoCabecalho itemCabecalho);
+        Task SaveDetail(List<Produto> items, PedidoCabecalho itemCabecalho);
+
+        Task DebitStock(List<Produto> items, PedidoCabecalho itemCabecalho);
+        
 
     }
 }

@@ -203,6 +203,7 @@ namespace ControlStoreAPI.Controllers
 
                 await _serviceDetalhe.ClearDetailDeep(request.Items, itemCabecalho);
                 await _serviceDetalhe.SaveDetail(request.Items, itemCabecalho);
+                await _serviceDetalhe.DebitStock(request.Items, itemCabecalho);
                 return Ok();
             }
             catch (DbUpdateConcurrencyException ex)

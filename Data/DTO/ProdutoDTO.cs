@@ -104,5 +104,7 @@ namespace ControlStoreAPI.Data.Model
         public int? CfopSaida { get; set; }
 
         public decimal? QuantidadeEstoqueSemNota { get; set; }
+
+        public string? Foto { get; set; }
     }
 }

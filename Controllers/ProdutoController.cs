@@ -97,6 +97,62 @@ namespace ControlStoreAPI.Controllers
             }
         }
 
+        [HttpPost("UploadImage")]
+        public async Task<IActionResult> UploadImage(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { Message = "Nenhum arquivo enviado." });
+            }
+
+            try
+            {
+                // Caminho onde o arquivo será salvo (exemplo simples, mas prefira usar serviços externos)
+                var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+
+                // Certifique-se de que o diretório existe
+                if (!Directory.Exists(uploadsPath))
+                {
+                    Directory.CreateDirectory(uploadsPath);
+                }
+
+
+                // Nome único para o arquivo
+                //var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                var filePath = Path.Combine(uploadsPath, file.FileName);
+
+
+                if (System.IO.File.Exists(filePath))
+                {
+                    System.IO.File.Delete(filePath);
+                }
+
+                // Salvar o arquivo
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                // Retornar a URL da imagem
+                var imageUrl = $"{Request.Scheme}://{Request.Host}/uploads/{file.FileName}";
+
+                // Atualiza o produto com a nova URL da imagem no banco de dados
+                int produtoId = Convert.ToInt32(file.FileName.Substring(0, file.FileName.Length - 4));
+                var produto = await _service.GetItem(produtoId);
+                if (produto != null)
+                {
+                    produto.Foto = imageUrl; // Certifique-se de que a entidade tem esse campo
+                    await _service.Put(produto);
+                }
+
+                return Ok(new { ImageUrl = imageUrl });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = $"Erro ao fazer upload: {ex.Message}" });
+            }
+        }
+
         // GET: api/Cliente/5
         [HttpGet("{id}")]
         //[Authorize(Policy = "CanRead")]

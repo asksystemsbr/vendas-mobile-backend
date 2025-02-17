@@ -114,6 +114,21 @@ namespace ControlStoreAPI.Services
             await _repositoryCabecalho.Put(itemCabecalho);
         }
 
+        public async Task DebitStock(List<Produto> items
+            , PedidoCabecalho itemCabecalho)
+        {
+            //save items
+            foreach (var item in items)
+            {
+                var produto = await _repositoryProduto.GetItem(item.ID);
+                if (produto != null)
+                {
+                    produto.QuantidadeEstoque =-item.QuantidadeEstoque ?? 0;
+                    await _repositoryProduto.Put(produto);
+                }               
+            }
+        }
+
 
 
         public async Task Delete(int id)

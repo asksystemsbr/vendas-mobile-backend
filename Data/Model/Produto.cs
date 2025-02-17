@@ -157,5 +157,8 @@ namespace ControlStoreAPI.Data.Model
 
         [Column("QTD_ESTOQUE_SNOTA", TypeName = "decimal(10, 2)")]
         public decimal? QuantidadeEstoqueSemNota { get; set; }
+
+
+        public string? Foto { get; set; }
     }
 }

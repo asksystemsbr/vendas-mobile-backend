@@ -41,7 +41,8 @@ builder.Services.AddCors(options =>
     //{
     //    policy.AllowAnyOrigin()
     //          .AllowAnyMethod()
-    //          .AllowAnyHeader();
+    //          .AllowAnyHeader()
+    //          .WithExposedHeaders("Content-Disposition");
     //});
 });
 #endregion
@@ -103,13 +104,32 @@ var app = builder.Build();
 #region Permitir CORS
 app.UseDeveloperExceptionPage();
 
-app.UseStaticFiles();
+var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+if (!Directory.Exists(uploadsPath))
+{
+    Directory.CreateDirectory(uploadsPath);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPath),
+    RequestPath = "/uploads",
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type");
+    }
+});
+
 
 app.UseRouting();
 
 // Aplica o CORS usando a política configurada
 app.UseCors("AllowSpecificOrigin");
 //app.UseCors("AllowAll");
+
+
 
 app.MapControllerRoute(
     name: "default",

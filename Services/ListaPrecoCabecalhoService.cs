@@ -126,6 +126,7 @@ namespace ControlStoreAPI.Services
                 {
                     produto.EstoqueMin = detalhe.EstoqueMinimo;
                     produto.EstoqueMax = detalhe.EstoqueMaximo;
+                    produto.QuantidadeEstoqueAnterior = produto.QuantidadeEstoque;
                     produto.QuantidadeEstoque = detalhe.Quantidade;
                 }
                 return produto;
@@ -155,7 +156,8 @@ namespace ControlStoreAPI.Services
                     x.ProdutoId,
                     x.EstoqueMinimo,
                     x.EstoqueMaximo,
-                    x.Quantidade
+                    x.Quantidade,
+                    x.Preco
                 })
                 .ToListAsync();
 
@@ -176,7 +178,9 @@ namespace ControlStoreAPI.Services
                 {
                     produto.EstoqueMin = detalhe.EstoqueMinimo;
                     produto.EstoqueMax = detalhe.EstoqueMaximo;
+                    produto.QuantidadeEstoqueAnterior = produto.QuantidadeEstoque;
                     produto.QuantidadeEstoque = detalhe.Quantidade;
+                    produto.ValorVenda = detalhe.Preco;
                 }
                 return produto;
             });

@@ -54,7 +54,7 @@ namespace ControlStoreAPI.Services
                 var query = from detalhe in _repository.Query()
                             join produto in _repositoryProduto.Query()
                             on detalhe.ProdutoId equals produto.ID
-                            where produto.CategoriaProdutoId == prod.CategoriaProdutoId
+                            where detalhe.ListaPrecoId == itemCabecalho.ID
                             select detalhe;
 
                 //clean items
@@ -75,6 +75,11 @@ namespace ControlStoreAPI.Services
                 itemDet.Preco = item.ValorVenda ?? 0;
                 itemDet.Quantidade = item.QuantidadeEstoque ?? 0;
                 await _repository.Post(itemDet);
+
+                //save product
+                var prodFromDB = await _repositoryProduto.GetItem(item.ID);
+                prodFromDB.TotalizadorParcial = item.TotalizadorParcial;
+                await _repositoryProduto.Put(prodFromDB);
             }
 
         }
