@@ -5,6 +5,7 @@ namespace ControlStoreAPI.Services.Interface
     public interface IPedidoDetalheService
     {
         Task<IEnumerable<PedidoDetalhe>> GetItems();
+        Task<IEnumerable<PedidoDetalhe>> GetItemsByCabecalho(int idCabecalho);
         Task<PedidoDetalhe> GetItem(int id);
         Task Put(PedidoDetalhe item);
         Task<PedidoDetalhe> Post(PedidoDetalhe item);

@@ -104,6 +104,28 @@ namespace ControlStoreAPI.Controllers
             }
         }
 
+        [HttpGet("GetPedidosAllUsersByStatus")]
+        //[Authorize(Policy = "CanRead")]
+        public async Task<ActionResult<IEnumerable<PedidoCabecalho>>> GetPedidosAllUsersByStatus([FromQuery] string status)
+        {
+            try
+            {
+                var items = await _service.GetPedidosAllUsersByStatus(status);
+                if (items == null || !items.Any())
+                {
+                    return NotFound(new { Message = "Nenhum produto encontrado para os critérios fornecidos." });
+                }
+                return Ok(items);
+            }
+            catch (Exception ex)
+            {
+
+                await _loggerService.LogError<string>(HttpContext.Request.Method, "", User, ex);
+                // Retorna uma resposta de erro com o código 500 e a mensagem de exceção
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
         [HttpGet("GetPedidosByStatus")]
         //[Authorize(Policy = "CanRead")]
         public async Task<ActionResult<IEnumerable<PedidoCabecalho>>> GetPedidosByStatus([FromQuery] int usuarioId, [FromQuery] string status )
@@ -171,12 +193,62 @@ namespace ControlStoreAPI.Controllers
             catch (DbUpdateConcurrencyException ex)
             {
                 await _loggerService.LogError<SalvarListaRequest>(HttpContext.Request.Method, request, User, ex);
-                    throw;
+                throw;
             }
             catch (Exception ex)
             {
 
                 await _loggerService.LogError<SalvarListaRequest>(HttpContext.Request.Method, request, User, ex);
+                // Retorna uma resposta de erro com o código 500 e a mensagem de exceção
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+
+        }
+
+        [HttpPost("AtualizarPedido")]
+        //[Authorize(Policy = "CanWrite")]
+        public async Task<IActionResult> AtualizarPedido([FromBody] SalvarPedidoRequest request)
+        {
+            if (request == null || request.ClienteId <= 0 || request.Items == null || !request.Items.Any())
+            {
+                return BadRequest("Dados inválidos. Verifique o cliente e os produtos.");
+            }
+
+
+            try
+            {
+                var pedido = await _service.GetItem(request.Id);
+                if (pedido == null)
+                    return BadRequest("Pedido não encontrado");
+
+                pedido.Status = request.Status;
+
+                 await _service.Put(pedido);
+                var detalhes = await  _serviceDetalhe.GetItemsByCabecalho(request.Id);
+                foreach (var item in detalhes)
+                {
+                    bool exist = request.Items.Any(x => x.ID == item.ProdutoId);
+                    if (exist)
+                    {
+                        item.Status = request.Status;
+                    }
+                    else
+                    {
+                        item.Status = "PENDENTE";
+                    }
+                    await _serviceDetalhe.Put(item);
+                }
+                return Ok();
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                await _loggerService.LogError<SalvarPedidoRequest>(HttpContext.Request.Method, request, User, ex);
+                    throw;
+            }
+            catch (Exception ex)
+            {
+
+                await _loggerService.LogError<SalvarPedidoRequest>(HttpContext.Request.Method, request, User, ex);
                 // Retorna uma resposta de erro com o código 500 e a mensagem de exceção
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }

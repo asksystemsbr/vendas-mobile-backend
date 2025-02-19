@@ -16,7 +16,8 @@ namespace ControlStoreAPI.Services.Interface
         Task<int> GetLasdOrOne();
         Task<IEnumerable<Produto>> GetProdutosPorCategoriaECliente(int categoriaId, int clienteId);
 
-        Task<IEnumerable<PedidoCabecalho>> GetPedidosByStatus(string status, int clienteId); 
+        Task<IEnumerable<PedidoCabecalho>> GetPedidosByStatus(string status, int clienteId);
+        Task<IEnumerable<PedidoCabecalho>> GetPedidosAllUsersByStatus(string status);
 
         Task<IEnumerable<Produto>> GetProdutosPorCliente(int clienteId);
         Task<PedidoCabecalho> SaveOrder(int clientId);

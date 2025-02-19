@@ -186,7 +186,56 @@ namespace ControlStoreAPI.Services
 
 
         }
-        
+
+        public async Task<IEnumerable<PedidoCabecalho>> GetPedidosAllUsersByStatus(string status)
+        {
+
+            //obtendo o cabecalho da tabela de preço
+            var cabecalhos = await _repository
+                .Query()
+                .Where(x =>x.Status.ToUpper() == status.ToUpper())
+                .ToListAsync();
+
+            if (cabecalhos == null)
+                return Enumerable.Empty<PedidoCabecalho>();
+
+            foreach (var cabecalho in cabecalhos)
+            {
+                //obtendo os detalhes
+                var detalhes = await _repositoryDetalhe
+                .Query()
+                .Where(x => x.PedidoCabecalhoId == cabecalho.ID)
+                .ToListAsync();
+
+                var produtoIds = detalhes.Select(d => d.ProdutoId).ToList();
+
+                var produtos = await _repositoryProduto
+                    .Query()
+                    .Where(p => produtoIds.Contains(p.ID))
+                    .ToListAsync();
+
+
+                cabecalho.Itens = detalhes.Select(detalhe =>
+                {
+                    var produto = produtos.FirstOrDefault(p => p.ID == detalhe.ProdutoId);
+                    return new Produto
+                    {
+                        ID = produto?.ID ?? 0,
+                        Nome = produto?.Nome ?? string.Empty,
+                        CodigoInterno = produto?.CodigoInterno,
+                        ValorVenda = produto?.ValorVenda,
+                        EstoqueMin = detalhe.EstoqueMinimo,
+                        EstoqueMax = detalhe.EstoqueMaximo,
+                        QuantidadeEstoque = detalhe.Quantidade,
+                        TotalizadorParcial = produto?.TotalizadorParcial
+                    };
+                }).ToList();
+            }
+
+            return cabecalhos;
+
+
+        }
 
         public async Task<IEnumerable<Produto>> GetProdutosPorCliente(int clienteId)
         {

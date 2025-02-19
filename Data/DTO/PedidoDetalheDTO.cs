@@ -12,5 +12,6 @@ namespace ControlStoreAPI.Data.Model
         public decimal EstoqueMaximo { get; set; }
         public decimal Preco { get; set; }
         public decimal Quantidade { get; set; }
+        public string Status { get; set; }
     }
 }

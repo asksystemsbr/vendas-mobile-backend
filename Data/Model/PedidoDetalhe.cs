@@ -30,6 +30,7 @@ namespace ControlStoreAPI.Data.Model
         [Column("quantidade")]
         public decimal Quantidade { get; set; }
 
-
+        [Column("status")]
+        public string Status { get; set; }
     }
 }

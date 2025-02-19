@@ -30,6 +30,12 @@ namespace ControlStoreAPI.Services
             return items.OrderBy(x => x.ID);
         }
 
+        public async Task<IEnumerable<PedidoDetalhe>> GetItemsByCabecalho(int idCabecalho)
+        {
+            var items =await _repository.Query().Where(x=>x.PedidoCabecalhoId==idCabecalho).ToListAsync();
+            return items.OrderBy(x => x.ID);
+        }
+
         public async Task<PedidoDetalhe> GetItem(int id)
         {
             var item = await _repository.GetItem(id);
@@ -105,6 +111,7 @@ namespace ControlStoreAPI.Services
                 itemDet.EstoqueMaximo = item.EstoqueMax ?? 0;
                 itemDet.Quantidade = item.QuantidadeEstoque ?? 0;
                 itemDet.Preco = (item.ValorVenda ?? 0) * itemDet.Quantidade;
+                itemDet.Status = "APROVADO";
                 await _repository.Post(itemDet);
                 total = total + itemDet.Preco;
             }
