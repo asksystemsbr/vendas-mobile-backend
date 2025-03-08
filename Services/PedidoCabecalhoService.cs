@@ -9,20 +9,26 @@ namespace ControlStoreAPI.Services
     public class PedidoCabecalhoService : IPedidoCabecalhoService
     {
         private readonly ILoggerService _loggerService;
+        private readonly IRepository<Cliente> _repositoryCliente;
         private readonly IRepository<PedidoCabecalho> _repository;
         private readonly IRepository<PedidoDetalhe> _repositoryDetalhe;
         private readonly IRepository<Produto> _repositoryProduto;
+        private readonly IRepository<FilesOrder> _repositoryFilesOrder;
 
         public PedidoCabecalhoService(ILoggerService loggerService,
+            IRepository<Cliente> repositoryCliente,
             IRepository<PedidoCabecalho> repository,
             IRepository<PedidoDetalhe> repositoryDetalhe,
-            IRepository<Produto> repositoryProduto
+            IRepository<Produto> repositoryProduto,
+            IRepository<FilesOrder> repositoryFilesOrder
             )
         {
             _loggerService = loggerService;
+            _repositoryCliente = repositoryCliente;
             _repository = repository;
             _repositoryDetalhe = repositoryDetalhe;
             _repositoryProduto = repositoryProduto;
+            _repositoryFilesOrder = repositoryFilesOrder;
         }
 
         public async Task<IEnumerable<PedidoCabecalho>> GetItems()
@@ -45,14 +51,14 @@ namespace ControlStoreAPI.Services
         public async Task<PedidoCabecalho> SaveOrder(int clientId)
         {
             var list = await _repository.Query().Where(x=>x.ClienteId == clientId
-            && x.Status.ToUpper()=="PENDENTE").FirstOrDefaultAsync();
+            && x.Status.ToUpper()=="APROVAR").FirstOrDefaultAsync();
             if (list!=null)
                 return list;
 
             PedidoCabecalho item = new PedidoCabecalho();
             item.ClienteId = clientId;
             item.Data = DateTime.Now;
-            item.Status = "PENDENTE";
+            item.Status = "APROVAR";
             item.ID = 0;
             return await _repository.Post(item);
         }
@@ -285,6 +291,54 @@ namespace ControlStoreAPI.Services
             });
 
             return produtosComDetalhes;
+        }
+
+
+        public async Task SalvarArquivo(PedidoCabecalho pedido, string fileUrl, string folder)
+        {
+            var files = await _repositoryFilesOrder.Query()
+                .Where(x =>
+                          (pedido.ID > 0 ? x.PedidoId == pedido.ID : true)
+                            && (pedido.ClienteId > 0 ? x.ClienteId == pedido.ClienteId : true)
+                            && x.Path == fileUrl
+                            && x.Type==folder).ToListAsync();
+
+            if(!files.Any())
+            {
+                FilesOrder filesOrders = new FilesOrder();
+                filesOrders.ID = 0;
+                filesOrders.Path = fileUrl;
+                filesOrders.Type = folder;
+                filesOrders.PedidoId = pedido.ID;
+                filesOrders.ClienteId= pedido.ClienteId;
+                filesOrders.Data = DateTime.Now;
+                await _repositoryFilesOrder.Post(filesOrders);
+            }
+            return;
+        }
+
+        public async Task<IEnumerable<FilesOrder>> GetFilesByPedido(int pedidoId,string type,string extension)
+        {
+            int id = pedidoId;
+            bool isBoleto = false;
+            if(type.ToLower().Contains("boleto"))
+            {
+                var cliente = await _repositoryCliente.Query()
+                    .Where(x=>x.FUNCIONARIO_ID== id).FirstOrDefaultAsync(); 
+
+                if(cliente!=null)
+                    id = cliente.ID;
+
+                type = "PDF";
+                isBoleto = true;
+            }
+            return  await _repositoryFilesOrder.Query()
+                .Where(f => 
+                (isBoleto ? f.ClienteId == id && f.PedidoId==0 : f.PedidoId == id)
+                && f.Type == type
+                )
+                .OrderByDescending(f => f.Data)
+                .ToListAsync();            
         }
     }
 }

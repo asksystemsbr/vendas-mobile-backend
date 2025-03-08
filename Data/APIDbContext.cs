@@ -12,13 +12,14 @@ namespace ControlStoreAPI.Data
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<Cliente> Clientes { get; set; }
         public DbSet<Composicao> Composicao { get; set; }
-        public DbSet<ComposicaoToProduto> ComposicaoToProduto { get; set; }        
+        public DbSet<ComposicaoToProduto> ComposicaoToProduto { get; set; }
+        public DbSet<FilesOrder> FilesOrder { get; set; }
         public DbSet<GrupoProduto> GrupoProduto { get; set; }
         public DbSet<GrupoUsuario> GrupoUsuario { get; set; }
         public DbSet<ListaPrecoCabecalho> ListaPrecoCabecalho { get; set; }
         public DbSet<ListaPrecoDetalhe> ListaPrecoDetalhe { get; set; }
         public DbSet<Modulo> Modulo { get; set; }
-        public DbSet<OperationLog> OperationLogs { get; set; }
+        public DbSet<OperationLog> OperationLogs { get; set; }        
         public DbSet<PedidoCabecalho> PedidoCabecalho { get; set; }
         public DbSet<PedidoDetalhe> PedidoDetalhe { get; set; }
         public DbSet<Permissao> Permissao { get; set; }

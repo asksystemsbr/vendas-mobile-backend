@@ -16,7 +16,7 @@ namespace ControlStoreAPI.Services.Interface
         Task<int> GetLasdOrOne();
         Task ClearDetail(List<Produto> items, PedidoCabecalho itemCabecalho);
         Task ClearDetailDeep(List<Produto> items, PedidoCabecalho itemCabecalho);
-        Task SaveDetail(List<Produto> items, PedidoCabecalho itemCabecalho);
+        Task SaveDetail(List<Produto> items, PedidoCabecalho itemCabecalho, string status);
 
         Task DebitStock(List<Produto> items, PedidoCabecalho itemCabecalho);
         

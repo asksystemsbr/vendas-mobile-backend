@@ -21,5 +21,9 @@ namespace ControlStoreAPI.Services.Interface
 
         Task<IEnumerable<Produto>> GetProdutosPorCliente(int clienteId);
         Task<PedidoCabecalho> SaveOrder(int clientId);
+
+        Task SalvarArquivo(PedidoCabecalho pedido, string fileUrl, string folder);
+
+        Task<IEnumerable<FilesOrder>> GetFilesByPedido(int pedidoId,string type,string extension);
     }
 }

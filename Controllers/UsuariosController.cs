@@ -1,11 +1,13 @@
 ﻿using ControlStoreAPI.Service.Interface;
 using ControlStoreAPI.Services.Interface;
 using ControlStoreAPI.View.ViewModel;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ControlStoreAPI.Controllers
 {
     [Route("api/[controller]")]
+    [EnableCors("AllowAll")]
     [ApiController]
     public class UsuariosController : ControllerBase
     {

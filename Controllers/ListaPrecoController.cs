@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ControlStoreAPI.Controllers
 {
     [Route("api/[controller]")]
-    [EnableCors("AllowSpecificOrigin")]
+    [EnableCors("AllowAll")]
     //[EnableCors("AllowAll")]
     [ApiController]
     public class ListaPrecoController : ControllerBase

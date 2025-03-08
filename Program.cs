@@ -29,21 +29,21 @@ builder.Services.AddControllersWithViews();
 // Configuração do CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowSpecificOrigin", builder =>
-        builder.WithOrigins("http://localhost:3000",
-                        "http://www.memconsultoria.kinghost.net",
-                        "http://memconsultoria.kinghost.net",
-                        "www.memconsultoria.kinghost.net")
-               .AllowAnyHeader()
-               .AllowAnyMethod()
-               .WithExposedHeaders("Content-Disposition"));
-    //options.AddPolicy("AllowAll", policy =>
-    //{
-    //    policy.AllowAnyOrigin()
-    //          .AllowAnyMethod()
-    //          .AllowAnyHeader()
-    //          .WithExposedHeaders("Content-Disposition");
-    //});
+    //options.AddPolicy("AllowSpecificOrigin", builder =>
+    //    builder.WithOrigins("http://localhost:3000",
+    //                    "http://www.naturalforjamobile.kinghost.net",
+    //                    "http://naturalforjamobile.kinghost.net",
+    //                    "www.naturalforjamobile.kinghost.net")
+    //           .AllowAnyHeader()
+    //           .AllowAnyMethod()
+    //           .WithExposedHeaders("Content-Disposition"));
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .WithExposedHeaders("Content-Disposition");
+    });
 });
 #endregion
 
@@ -53,6 +53,7 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<IRepository<Cliente>, Repository<Cliente>>();
 builder.Services.AddScoped<IRepository<Composicao>, Repository<Composicao>>();
 builder.Services.AddScoped<IRepository<ComposicaoToProduto>, Repository<ComposicaoToProduto>>();
+builder.Services.AddScoped<IRepository<FilesOrder>, Repository<FilesOrder>>();
 builder.Services.AddScoped<IRepository<GrupoProduto>, Repository<GrupoProduto>>();
 builder.Services.AddScoped<IRepository<GrupoUsuario>, Repository<GrupoUsuario>>();
 builder.Services.AddScoped<IRepository<ListaPrecoCabecalho>, Repository<ListaPrecoCabecalho>>();
@@ -126,8 +127,8 @@ app.UseStaticFiles(new StaticFileOptions
 app.UseRouting();
 
 // Aplica o CORS usando a política configurada
-app.UseCors("AllowSpecificOrigin");
-//app.UseCors("AllowAll");
+//app.UseCors("AllowSpecificOrigin");
+app.UseCors("AllowAll");
 
 
 

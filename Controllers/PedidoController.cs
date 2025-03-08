@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ControlStoreAPI.Controllers
 {
     [Route("api/[controller]")]
-    [EnableCors("AllowSpecificOrigin")]
+    [EnableCors("AllowAll")]
     [ApiController]
     public class PedidoController : ControllerBase
     {
@@ -187,7 +187,7 @@ namespace ControlStoreAPI.Controllers
                 var itemCabecalho = await _service.SaveOrder(cliente.ID);
 
                 await _serviceDetalhe.ClearDetail(request.Items, itemCabecalho);
-                await _serviceDetalhe.SaveDetail(request.Items, itemCabecalho);
+                await _serviceDetalhe.SaveDetail(request.Items, itemCabecalho,"APROVAR");
                 return Ok();
             }
             catch (DbUpdateConcurrencyException ex)
@@ -274,7 +274,7 @@ namespace ControlStoreAPI.Controllers
                 await _service.Put(itemCabecalho);
 
                 await _serviceDetalhe.ClearDetailDeep(request.Items, itemCabecalho);
-                await _serviceDetalhe.SaveDetail(request.Items, itemCabecalho);
+                await _serviceDetalhe.SaveDetail(request.Items, itemCabecalho, "ABERTO");
                 await _serviceDetalhe.DebitStock(request.Items, itemCabecalho);
                 return Ok();
             }
@@ -389,6 +389,133 @@ namespace ControlStoreAPI.Controllers
         private async Task<bool> ProdutoExists(int id)
         {
             return await _service.Exists(id);
+        }
+
+        [HttpPost("UploadFile")]
+        public async Task<IActionResult> UploadFile(IFormFile file, [FromQuery] int pedidoId)
+        {
+            bool boleto = false;
+
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { Message = "Nenhum arquivo enviado." });
+            }
+
+            // Verifica a extensão do arquivo
+            var permittedExtensions = new[] { ".pdf", ".xml" };
+            var fileExtension = Path.GetExtension(file.FileName).ToLower();
+            
+
+            if (!permittedExtensions.Contains(fileExtension))
+            {
+                return BadRequest(new { Message = "Apenas arquivos PDF ou XML são permitidos." });
+            }
+
+            var folder = fileExtension.Contains("pdf") ? "PDF" : "XML";
+
+            try
+            {
+                // Define o caminho para salvar o arquivo
+                var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads","pedidos", folder);
+
+                // Garante que o diretório existe
+                if (!Directory.Exists(uploadsPath))
+                {
+                    Directory.CreateDirectory(uploadsPath);
+                }
+
+                // Gera um nome único para o arquivo
+                //var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
+                var filename = file.FileName;
+                if (filename.ToLower().Contains("boleto"))
+                {
+                    boleto = true;
+                    filename = filename.Replace("boleto_", "");
+                }
+
+                var filePath = Path.Combine(uploadsPath, filename);
+
+                if (System.IO.File.Exists(filePath))
+                {
+                    System.IO.File.Delete(filePath);
+                }
+
+                // Salva o arquivo
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                // Retorna a URL do arquivo
+                var fileUrl = $"{Request.Scheme}://{Request.Host}/uploads/pedidos/{folder}/{filename}";
+
+                // Atualiza o pedido com a URL do arquivo no banco de dados
+                PedidoCabecalho pedido = null;
+                if (!boleto)
+                {
+                    pedido = await _service.GetItem(pedidoId);
+                }
+                else
+                {
+                    pedido = new PedidoCabecalho
+                    {
+                        ClienteId = pedidoId,
+                        ID=0
+                    };
+
+                }
+
+                if (pedido != null)
+                {
+                    await _service.SalvarArquivo(pedido, fileUrl, folder);
+                }
+
+                return Ok(new { FileUrl = fileUrl });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = $"Erro ao fazer upload: {ex.Message}" });
+            }
+        }
+
+        [HttpGet("GetFilesByPedido")]
+        public async Task<IActionResult> GetFilesByPedido([FromQuery] int pedidoId,[FromQuery] string type, [FromQuery] string extension)
+        {
+            var files =await _service.GetFilesByPedido(pedidoId,type, extension);
+
+            if (files == null || !files.Any())
+            {
+                return NotFound(new { Message = "Nenhum arquivo encontrado para este pedido." });
+            }
+
+            return Ok(files);
+        }
+
+        [HttpGet("DownloadFile")]
+        public IActionResult DownloadFile([FromQuery] string filePath)
+        {
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                return BadRequest(new { Message = "Parâmetro filePath inválido." });
+            }
+
+            if (Uri.TryCreate(filePath, UriKind.Absolute, out Uri uri))
+            {
+                filePath = Uri.UnescapeDataString(uri.AbsolutePath.TrimStart('/')); // Remove a barra inicial
+            }
+
+            var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", filePath);
+
+            if (!System.IO.File.Exists(fullPath))
+            {
+                return NotFound(new { Message = "Arquivo não encontrado." });
+            }
+
+            var fileBytes = System.IO.File.ReadAllBytes(fullPath);
+            var fileName = Path.GetFileName(fullPath);
+            var contentType = "application/octet-stream"; // Ajustar conforme necessário
+
+            return File(fileBytes, contentType, fileName);
         }
     }
 }

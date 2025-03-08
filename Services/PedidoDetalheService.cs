@@ -94,7 +94,7 @@ namespace ControlStoreAPI.Services
         }
 
         public async Task SaveDetail(List<Produto> items
-            , PedidoCabecalho itemCabecalho)
+            , PedidoCabecalho itemCabecalho,string status)
         {
 
             decimal total = 0;
@@ -111,7 +111,7 @@ namespace ControlStoreAPI.Services
                 itemDet.EstoqueMaximo = item.EstoqueMax ?? 0;
                 itemDet.Quantidade = item.QuantidadeEstoque ?? 0;
                 itemDet.Preco = (item.ValorVenda ?? 0) * itemDet.Quantidade;
-                itemDet.Status = "APROVADO";
+                itemDet.Status = status;
                 await _repository.Post(itemDet);
                 total = total + itemDet.Preco;
             }

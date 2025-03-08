@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ControlStoreAPI.Controllers
 {
     [Route("api/[controller]")]
-    [EnableCors("AllowSpecificOrigin")]
+    [EnableCors("AllowAll")]
     [ApiController]
     public class ProdutoController : ControllerBase
     {
