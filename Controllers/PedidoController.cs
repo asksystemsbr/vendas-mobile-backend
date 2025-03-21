@@ -19,18 +19,21 @@ namespace ControlStoreAPI.Controllers
         private readonly ILoggerService _loggerService;
         private readonly IPedidoCabecalhoService _service;
         private readonly IPedidoDetalheService _serviceDetalhe;
+        private readonly IProdutoService _serviceProduto;
         private readonly IClientService _serviceClient;
         private readonly IMapper _mapper;
 
         public PedidoController(ILoggerService loggerService
             , IPedidoCabecalhoService service
             , IPedidoDetalheService serviceDetalhe
+            , IProdutoService serviceProduto
             , IClientService serviceClient
             , IMapper mapper)
         {
             _loggerService = loggerService;
             _service = service;
             _serviceDetalhe = serviceDetalhe;
+            _serviceProduto = serviceProduto;
             _serviceClient = serviceClient;
             _mapper = mapper;
         }
@@ -188,6 +191,14 @@ namespace ControlStoreAPI.Controllers
 
                 await _serviceDetalhe.ClearDetail(request.Items, itemCabecalho);
                 await _serviceDetalhe.SaveDetail(request.Items, itemCabecalho,"APROVAR");
+
+                foreach (var item in request.Items)
+                {
+                    var produto = await _serviceProduto.GetItem(item.ID);
+                    produto.QuantidadeEstoque = item.QuantidadeEstoqueSemNota;
+                    await _serviceProduto.Put(produto);
+                }
+
                 return Ok();
             }
             catch (DbUpdateConcurrencyException ex)
@@ -392,31 +403,41 @@ namespace ControlStoreAPI.Controllers
         }
 
         [HttpPost("UploadFile")]
-        public async Task<IActionResult> UploadFile(IFormFile file, [FromQuery] int pedidoId)
+        public async Task<IActionResult> UploadFile([FromForm] ParametersRequestDTO itemDTO)
         {
             bool boleto = false;
 
-            if (file == null || file.Length == 0)
+            if (itemDTO.file == null || itemDTO.file.Length == 0)
             {
                 return BadRequest(new { Message = "Nenhum arquivo enviado." });
             }
 
             // Verifica a extensão do arquivo
-            var permittedExtensions = new[] { ".pdf", ".xml" };
-            var fileExtension = Path.GetExtension(file.FileName).ToLower();
+            var permittedExtensions = new[] { ".pdf", ".xml", ".jpg",".jpeg", ".heic" };
+            var fileExtension = Path.GetExtension(itemDTO.file.FileName).ToLower();
             
 
             if (!permittedExtensions.Contains(fileExtension))
             {
-                return BadRequest(new { Message = "Apenas arquivos PDF ou XML são permitidos." });
+                return BadRequest(new { Message = "Apenas arquivos PDF, XML e JPG são permitidos." });
             }
 
-            var folder = fileExtension.Contains("pdf") ? "PDF" : "XML";
+            string folder = itemDTO.Descricao.ToUpper() switch
+            {
+                "NFE_XML" => "XML",
+                "NFE_PDF" => "PDF",
+                "BOLETO" => "BOLETO",
+                "COMPROVANTE" => "COMPROVANTE",
+                _ => "PDF" // Default case
+            };
+
 
             try
             {
                 // Define o caminho para salvar o arquivo
-                var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads","pedidos", folder);
+                var uploadsPath  = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "pedidos", itemDTO.ID.ToString(), folder); 
+                if (itemDTO.Descricao.ToUpper() == "BOLETO")
+                    boleto = true;
 
                 // Garante que o diretório existe
                 if (!Directory.Exists(uploadsPath))
@@ -426,12 +447,7 @@ namespace ControlStoreAPI.Controllers
 
                 // Gera um nome único para o arquivo
                 //var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
-                var filename = file.FileName;
-                if (filename.ToLower().Contains("boleto"))
-                {
-                    boleto = true;
-                    filename = filename.Replace("boleto_", "");
-                }
+                var filename = itemDTO.file.FileName;                
 
                 var filePath = Path.Combine(uploadsPath, filename);
 
@@ -443,23 +459,23 @@ namespace ControlStoreAPI.Controllers
                 // Salva o arquivo
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
-                    await file.CopyToAsync(stream);
+                    await itemDTO.file.CopyToAsync(stream);
                 }
 
                 // Retorna a URL do arquivo
-                var fileUrl = $"{Request.Scheme}://{Request.Host}/uploads/pedidos/{folder}/{filename}";
+                string fileUrl =  $"{Request.Scheme}://{Request.Host}/uploads/pedidos/{itemDTO.ID.ToString()}/{folder}/{filename}";
 
                 // Atualiza o pedido com a URL do arquivo no banco de dados
                 PedidoCabecalho pedido = null;
                 if (!boleto)
                 {
-                    pedido = await _service.GetItem(pedidoId);
+                    pedido = await _service.GetItem(itemDTO.ID);
                 }
                 else
                 {
                     pedido = new PedidoCabecalho
                     {
-                        ClienteId = pedidoId,
+                        ClienteId = itemDTO.ID,
                         ID=0
                     };
 
@@ -467,7 +483,7 @@ namespace ControlStoreAPI.Controllers
 
                 if (pedido != null)
                 {
-                    await _service.SalvarArquivo(pedido, fileUrl, folder);
+                    await _service.SalvarArquivo(pedido, fileUrl, folder,itemDTO.Descricao);
                 }
 
                 return Ok(new { FileUrl = fileUrl });

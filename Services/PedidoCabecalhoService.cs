@@ -294,7 +294,7 @@ namespace ControlStoreAPI.Services
         }
 
 
-        public async Task SalvarArquivo(PedidoCabecalho pedido, string fileUrl, string folder)
+        public async Task SalvarArquivo(PedidoCabecalho pedido, string fileUrl, string folder,string source)
         {
             var files = await _repositoryFilesOrder.Query()
                 .Where(x =>
@@ -312,6 +312,7 @@ namespace ControlStoreAPI.Services
                 filesOrders.PedidoId = pedido.ID;
                 filesOrders.ClienteId= pedido.ClienteId;
                 filesOrders.Data = DateTime.Now;
+                filesOrders.Source = source;
                 await _repositoryFilesOrder.Post(filesOrders);
             }
             return;
@@ -321,7 +322,16 @@ namespace ControlStoreAPI.Services
         {
             int id = pedidoId;
             bool isBoleto = false;
-            if(type.ToLower().Contains("boleto"))
+            string source = type.ToUpper() switch
+            {
+                "NFE_XML" => "XML",
+                "NFE_PDF" => "PDF",
+                "BOLETO" => "BOLETO",
+                "COMPROVANTE" => "COMPROVANTE",
+                _ => "" // Default case
+            };
+
+            if (type.ToLower().Contains("boleto"))
             {
                 var cliente = await _repositoryCliente.Query()
                     .Where(x=>x.FUNCIONARIO_ID== id).FirstOrDefaultAsync(); 
@@ -335,7 +345,7 @@ namespace ControlStoreAPI.Services
             return  await _repositoryFilesOrder.Query()
                 .Where(f => 
                 (isBoleto ? f.ClienteId == id && f.PedidoId==0 : f.PedidoId == id)
-                && f.Type == type
+                && f.Source == source
                 )
                 .OrderByDescending(f => f.Data)
                 .ToListAsync();            

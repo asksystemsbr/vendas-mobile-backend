@@ -27,5 +27,8 @@ namespace ControlStoreAPI.Data.Model
         [Column("type")]
         public string Type { get; set; }
 
+        [Column("source")]
+        public string Source { get; set; }
+
     }
 }
